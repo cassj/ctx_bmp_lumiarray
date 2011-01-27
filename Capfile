@@ -69,14 +69,14 @@ end
 before "pp_qc_exprssion_data", "EC2:start"
 
 
+#Array is Mouse Ref8 v2.0
 desc "Fetch ReMoat data which has mm9 probe positions"
 task :get_remoat_anno, :roles => group_name do
-  sudo "apt-get -y install unzip"
   run "mkdir -p #{working_dir}/lib"
   run "rm -Rf  #{working_dir}/lib/Annotation_Illumina_Mouse*"
-  run "cd #{working_dir}/lib && curl http://www.compbio.group.cam.ac.uk/Resources/Annotation/final/Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.zip > Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.zip "
-  run "cd #{working_dir}/lib && unzip Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.zip"
-end
+  run "cd #{working_dir}/lib && curl  http://www.compbio.group.cam.ac.uk/Resources/Annotation/final/Annotation_Illumina_Mouse-WG-V2_mm9_V1.0.0_Aug09.zip > Annotation_Illumina_Mouse-WG-V2_mm9_V1.0.0_Aug09.zip"
+  run "cd #{working_dir}/lib && unzip Annotation_Illumina_Mouse-WG-V2_mm9_V1.0.0_Aug09.zip"
+end 
 before 'get_remoat_anno', 'EC2:start'
 
 
@@ -84,21 +84,25 @@ before 'get_remoat_anno', 'EC2:start'
 desc "Make an IRanges RangedData object from expression data"
 task :xpn2rd, :roles => group_name do
   user = variables[:ssh_options][:user]
-  run "mkdir -p #{working_dir}/scripts"
-  upload("scripts/xpn_csv_to_iranges.R", "#{working_dir}/scripts/xpn_csv_to_iranges.R")
+  upload('scripts/xpn_csv_to_iranges.R',"#{working_dir}/scripts/xpn_csv_to_iranges.R")
   run "cd #{working_dir}/scripts && chmod +x xpn_csv_to_iranges.R"
-  run "Rscript #{working_dir}/scripts/xpn_csv_to_iranges.R #{mount_point}/limma_results.csv #{working_dir}/lib/Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.txt"
-
+  run "cd #{mount_point} && Rscript #{working_dir}/scripts/xpn_csv_to_iranges.R limma_results.csv #{working_dir}/lib/Annotation_Illumina_Mouse-WG-V2_mm9_V1.0.0_Aug09.txt"
 end
-before "xpn2rd","EC2:start"
+before "xpn2rd","EC2:start"  
 
 
-desc "Fetch expression data results"
-task :get_xpn, :roles=> group_name do
+
+desc "Fetch dataset in csv format"
+task :get_limma_results, :roles=> group_name do
   `mkdir -p results`
-  download("#{mount_point}/limma_rd.csv", "results/limma_rd.csv")
-end
-before "get_xpn", "EC2:start"
+  files = capture("cd #{mount_point} && ls *.csv").chomp
+  files = files.split("\n")
+  files.each {|f|
+    download("#{mount_point}/#{f}", "results/#{f}")
+  }
+end 
+before "get_limma_results", "EC2:start"
+
 
 
 #if you want to keep the results

@@ -14,5 +14,7 @@ biocLite("biomaRt")
 	 	
 biocLite("ChIPpeakAnno")
 
+biocLite("illuminaMousev2BeadID.db")
+
 biocLite("BSgenome.Mmusculus.UCSC.mm9")
 

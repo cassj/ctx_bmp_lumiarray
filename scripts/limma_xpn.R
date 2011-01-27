@@ -37,8 +37,6 @@ data <- exprs(E)
 
 library(limma)
 
-
-#### ?
 chips <- colnames(exprs(BSData))
 
 BMP4 <- c("4203884026_A", "4203884026_B", "4203884035_A", "4203884035_B")
@@ -51,34 +49,40 @@ ctx <- c(rep(0,4),1,1,rep(0,4),1,1)
 
 design<-cbind(bmp, fbs, ctx)
 rownames(design) <- chips
-###
-
-cols <- rep(qw(ns, astro),4)
-ns<-which(cols=="ns")
-astro<-which(cols=="astro")
-
-design<-matrix(0,nrow=(ncol(data)), ncol=2)
-colnames(design)<-c("ns","astro")
-design[ns,"ns"]<-1
-design[astro,"astro"]<-1
 
 
-fit<-lmFit(data, design)
-cont.matrix<-makeContrasts(nsvsastro=astro-ns, levels=design)
+fit<-lmFit(exprs(E), design)
+cont.matrix<-makeContrasts(bmpvctx=bmp-ctx,
+                           fbsvctx=fbs-ctx,
+                           bmpvfbs=bmp-fbs,
+                           levels=design)
 fit<-contrasts.fit(fit, cont.matrix)
 ebFit<-eBayes(fit)
 
-write.fit(ebFit, file=outfile , adjust="BH")
-data<-read.table(outfile, sep="\t", header=T)
+
+#F test
+#for now, consider the t-tests on their own when correcting. Unsure if this is best or not.
+
+#Wait - we're not actually using this?
+#write.fit(ebFit, file="limma_fit.csv", F.adjust="BH", adjust="BH", method="separate", sep=",")
+#data<-read.table(outfile, sep="\t", header=T)
 
 data<- topTable(ebFit, number=nrow(data))
 write.csv(data,outfile)
 
+#Individual comparisons:
+outfile.1 <- sub('.csv', '_bmp_v_ctx.csv', outfile) 
+outfile.2 <- sub('.csv', '_fbs_v_ctx.csv', outfile) 
+outfile.3 <- sub('.csv', '_bmp_v_fbs.csv', outfile) 
 
+data<- topTable(ebFit, coef=1, number=nrow(data))
+write.csv(data,outfile.1)
 
+data<- topTable(ebFit, coef=2, number=nrow(data))
+write.csv(data,outfile.2)
 
-
-
+data<- topTable(ebFit, coef=3, number=nrow(data))
+write.csv(data,outfile.3)
 
 
 
