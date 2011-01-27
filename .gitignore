@@ -1,0 +1,8 @@
+*~
+*#
+*.swp
+results/*
+old
+old/*
+*nohup*
+*.htaccess*

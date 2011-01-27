@@ -1,0 +1,63 @@
+###
+# Upload the expression data, make csv files from xls workbook.
+# make an EBS snapshot. 
+
+require 'catpaws'
+
+#generic settings
+set :aws_access_key,  ENV['AMAZON_ACCESS_KEY']
+set :aws_secret_access_key , ENV['AMAZON_SECRET_ACCESS_KEY']
+set :ec2_url, ENV['EC2_URL']
+set :ssh_options, { :user => "ubuntu", :keys=>[ENV['EC2_KEYFILE']]}
+set :key, ENV['EC2_KEY']
+set :key_file, ENV['EC2_KEYFILE']
+set :ami, 'ami-52794c26'  #EC2 eu-west-1 32bit Lucid
+set :instance_type, 'm1.small'
+set :s3cfg, ENV['S3CFG'] #location of ubuntu s3cfg file
+set :working_dir, '/mnt/work'
+
+set :nhosts, 1
+set :group_name, 'ctx_bmp_lumiarray_data'
+
+set :snap_id, `cat SNAPID`.chomp #ec2 eu-west-1 
+set :vol_id, `cat VOLUMEID`.chomp #empty until you've created a new volume
+set :ebs_size, 1  #Needs to be the size of the snap plus enough space for alignments
+set :availability_zone, 'eu-west-1a'  #wherever the ami is
+set :dev, '/dev/sdf'
+set :mount_point, '/mnt/data'
+
+
+
+#make a new EBS volume from this snap 
+#cap EBS:create
+
+#and mount your EBS
+#cap EBS:attach
+#cap EBS:format_xfs
+#cap EBS:mount_xfs
+
+
+
+set :datafile, 'Non-background_subtracted_Sample_Probe_Profile.txt' 
+
+desc "Upload Data"
+task :upload_data, :roles => group_name do
+  upload(datafile, "#{mount_point}/#{datafile}")
+end
+before 'upload_data', 'EC2:start'
+
+
+#if you want to keep the results
+
+#cap EBS:snapshot
+
+#and then shut everything down:
+
+# cap EBS:unmount
+# cap EBS:detach
+# cap EBS:delete - unless you're planning to use it again.
+# cap EC2:stop
+
+
+
+
