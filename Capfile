@@ -26,6 +26,12 @@ set :availability_zone, 'eu-west-1a'  #wherever the ami is
 set :dev, '/dev/sdf'
 set :mount_point, '/mnt/data'
 
+# Try and load a local config file to override any of the above values, should one exist.
+# So that if you change these values, they don't get overwritten if you update the repos.
+begin
+ load("Capfile.local")
+rescue Exception
+end
 
 
 #make a new EBS volume from this snap 
